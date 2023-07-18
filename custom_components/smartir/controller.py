@@ -15,6 +15,7 @@ XIAOMI_CONTROLLER = 'Xiaomi'
 MQTT_CONTROLLER = 'MQTT'
 LOOKIN_CONTROLLER = 'LOOKin'
 ESPHOME_CONTROLLER = 'ESPHome'
+MOESUFOR11_CONTROLLER = "MoesUFOR11"
 
 ENC_BASE64 = 'Base64'
 ENC_HEX = 'Hex'
@@ -26,6 +27,7 @@ XIAOMI_COMMANDS_ENCODING = [ENC_PRONTO, ENC_RAW]
 MQTT_COMMANDS_ENCODING = [ENC_RAW]
 LOOKIN_COMMANDS_ENCODING = [ENC_PRONTO, ENC_RAW]
 ESPHOME_COMMANDS_ENCODING = [ENC_RAW]
+MOESUFOR11_COMMANDS_ENCODING = [ENC_RAW]
 
 
 def get_controller(hass, controller, encoding, controller_data, delay):
@@ -35,7 +37,8 @@ def get_controller(hass, controller, encoding, controller_data, delay):
         XIAOMI_CONTROLLER: XiaomiController,
         MQTT_CONTROLLER: MQTTController,
         LOOKIN_CONTROLLER: LookinController,
-        ESPHOME_CONTROLLER: ESPHomeController
+        ESPHOME_CONTROLLER: ESPHomeController,
+        MOESUFOR11_CONTROLLER: MoesUFOR11
     }
     try:
         return controllers[controller](hass, controller, encoding, controller_data, delay)
@@ -184,3 +187,22 @@ class ESPHomeController(AbstractController):
 
         await self.hass.services.async_call(
             'esphome', self._controller_data, service_data)
+
+class MoesUFOR11(AbstractController):
+    """Controls a MoesUFOR11 over Z2M device."""
+
+    def check_encoding(self, encoding):
+        """Check if the encoding is supported by the controller."""
+        if encoding not in MOESUFOR11_COMMANDS_ENCODING:
+            raise Exception("The encoding is not supported "
+                            "by the ESPHome controller.")
+
+    async def send(self, command):
+        """Send a command."""
+        service_data = {
+            'topic': self._controller_data,
+            'payload': json.dumps({ 'is_code_to_send': command })
+        }
+
+        await self.hass.services.async_call(
+            'mqtt', 'publish', service_data)
